@@ -93,3 +93,12 @@ export {
   GovernanceProposal,
   GovernancePhase,
 } from './voting';
+
+// Bridge (COINjecture Integration)
+export {
+  StateAnchorManager,
+  StateAnchor,
+  MerkleProof,
+  COINjectureBridgeState,
+  parseBridgeState,
+} from './bridge';

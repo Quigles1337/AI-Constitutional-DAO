@@ -1,0 +1,32 @@
+{
+  "name": "@ai-constitution-dao/cli",
+  "version": "0.1.0",
+  "description": "CLI tools for AI Constitution DAO governance",
+  "main": "dist/index.js",
+  "bin": {
+    "dao": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@ai-constitution-dao/oracle-node": "^0.1.0",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.6",
+    "cli-table3": "^0.6.3",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

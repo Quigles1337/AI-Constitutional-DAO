@@ -1,0 +1,39 @@
+{
+  "name": "@ai-constitution-dao/sdk",
+  "version": "0.1.0",
+  "description": "Client SDK for AI Constitution DAO governance on XRPL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@ai-constitution-dao/oracle-node": "^0.1.0",
+    "xrpl": "^3.0.0",
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "xrpl": "^3.0.0"
+  },
+  "keywords": [
+    "xrpl",
+    "dao",
+    "governance",
+    "ai",
+    "constitution",
+    "sdk"
+  ],
+  "author": "AI Constitution DAO",
+  "license": "MIT"
+}

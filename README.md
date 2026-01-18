@@ -326,32 +326,55 @@ ai-constitution-dao/
 │   │       │   └── cycles.rs
 │   │       └── types/           # Core types
 │   │
-│   └── oracle-node/             # TypeScript - Oracle service
+│   ├── oracle-node/             # TypeScript - Oracle service
+│   │   └── src/
+│   │       ├── channels/        # Channel B implementation
+│   │       │   └── channelB.ts  # Claude API integration
+│   │       ├── network/         # Oracle infrastructure
+│   │       │   ├── consensus.ts # Commit-reveal protocol
+│   │       │   └── registry.ts  # Oracle set management
+│   │       ├── governance/      # Proposal lifecycle
+│   │       │   ├── proposal.ts  # Proposal manager
+│   │       │   └── jury.ts      # Constitutional jury
+│   │       ├── staking/         # Token economics
+│   │       │   ├── slashing.ts  # Slashing manager
+│   │       │   ├── fraudProof.ts # Fraud proof system
+│   │       │   ├── rewards.ts   # Reward distribution
+│   │       │   └── stakingManager.ts # Unified staking interface
+│   │       ├── voting/          # Governance flow
+│   │       │   ├── votingSystem.ts # Token-weighted voting
+│   │       │   ├── router.ts    # Decidability routing
+│   │       │   └── orchestrator.ts # Full governance coordinator
+│   │       ├── bridge/          # COINjecture bridge prep
+│   │       │   └── anchor.ts    # State anchoring
+│   │       ├── xrpl/            # XRPL integration
+│   │       │   ├── client.ts    # Network client
+│   │       │   ├── escrow.ts    # Bond management
+│   │       │   └── transactions.ts
+│   │       ├── test-oracle-flow.ts      # Phase 2 integration test
+│   │       ├── test-staking-flow.ts     # Phase 3 integration test
+│   │       ├── test-governance-flow.ts  # Phase 4 integration test
+│   │       └── test-phase5-integration.ts # Phase 5 integration test
+│   │
+│   ├── cli/                     # TypeScript - CLI tools
+│   │   └── src/
+│   │       ├── commands/        # CLI commands
+│   │       │   ├── proposal.ts  # Proposal commands
+│   │       │   ├── vote.ts      # Voting commands
+│   │       │   ├── oracle.ts    # Oracle commands
+│   │       │   ├── wallet.ts    # Wallet commands
+│   │       │   ├── config.ts    # Config commands
+│   │       │   └── status.ts    # Status command
+│   │       ├── utils/           # CLI utilities
+│   │       │   └── client.ts    # Shared client utils
+│   │       └── index.ts         # CLI entry point
+│   │
+│   └── sdk/                     # TypeScript - Client SDK
 │       └── src/
-│           ├── channels/        # Channel B implementation
-│           │   └── channelB.ts  # Claude API integration
-│           ├── network/         # Oracle infrastructure
-│           │   ├── consensus.ts # Commit-reveal protocol
-│           │   └── registry.ts  # Oracle set management
-│           ├── governance/      # Proposal lifecycle
-│           │   ├── proposal.ts  # Proposal manager
-│           │   └── jury.ts      # Constitutional jury
-│           ├── staking/         # Token economics
-│           │   ├── slashing.ts  # Slashing manager
-│           │   ├── fraudProof.ts # Fraud proof system
-│           │   ├── rewards.ts   # Reward distribution
-│           │   └── stakingManager.ts # Unified staking interface
-│           ├── voting/          # Governance flow
-│           │   ├── votingSystem.ts # Token-weighted voting
-│           │   ├── router.ts    # Decidability routing
-│           │   └── orchestrator.ts # Full governance coordinator
-│           ├── xrpl/            # XRPL integration
-│           │   ├── client.ts    # Network client
-│           │   ├── escrow.ts    # Bond management
-│           │   └── transactions.ts
-│           ├── test-oracle-flow.ts     # Phase 2 integration test
-│           ├── test-staking-flow.ts    # Phase 3 integration test
-│           └── test-governance-flow.ts # Phase 4 integration test
+│           ├── client.ts        # Main SDK client
+│           ├── proposal.ts      # Proposal utilities
+│           ├── oracle.ts        # Oracle utilities
+│           └── index.ts         # SDK exports
 │
 ├── docs/
 │   └── spec-v5.md              # Full specification
@@ -694,13 +717,211 @@ flowchart TB
     style Events fill:#2c3e50,stroke:#34495e,color:#fff
 ```
 
+## CLI Reference
+
+The DAO CLI provides command-line access to all governance operations:
+
+```bash
+# Installation
+npm install -g @ai-constitution-dao/cli
+
+# Or run directly with npx
+npx @ai-constitution-dao/cli
+```
+
+### Commands
+
+```mermaid
+flowchart TB
+    subgraph Proposal["dao proposal"]
+        P1[submit --text --logic --layer]
+        P2[status proposal-id]
+        P3[list --status --limit]
+    end
+
+    subgraph Vote["dao vote"]
+        V1[cast proposal-id --vote yes/no/abstain]
+        V2[delegate address --amount]
+        V3[undelegate address]
+        V4[power address]
+    end
+
+    subgraph Oracle["dao oracle"]
+        O1[register --bond]
+        O2[status address]
+        O3[stake amount]
+        O4[unstake]
+        O5[complete-unstake]
+        O6[rewards --claim]
+        O7[list --active]
+    end
+
+    subgraph Wallet["dao wallet"]
+        W1[create --save]
+        W2[import secret]
+        W3[balance address]
+        W4[fund]
+        W5[info]
+        W6[export]
+    end
+
+    subgraph Config["dao config"]
+        C1[set key value]
+        C2[get key]
+        C3[list]
+        C4[reset]
+        C5[init]
+    end
+
+    style Proposal fill:#3498db,stroke:#2980b9,color:#fff
+    style Vote fill:#27ae60,stroke:#229954,color:#fff
+    style Oracle fill:#9b59b6,stroke:#8e44ad,color:#fff
+    style Wallet fill:#f39c12,stroke:#d68910,color:#fff
+    style Config fill:#e74c3c,stroke:#c0392b,color:#fff
+```
+
+### Example Usage
+
+```bash
+# Configure CLI
+dao config init
+dao config set network testnet
+dao wallet create --save
+
+# Fund wallet on testnet
+dao wallet fund
+
+# Submit a proposal
+dao proposal submit \
+  --text "Increase oracle rewards by 10%" \
+  --logic '{"action":"param_change","target":"oracle_rewards","value":1.1}' \
+  --layer L2
+
+# Vote on a proposal
+dao vote cast abc123... --vote yes
+
+# Register as oracle
+dao oracle register --bond 100000000000
+
+# Check system status
+dao status
+```
+
+## SDK Reference
+
+The SDK provides programmatic access for integration:
+
+```typescript
+import {
+  DAOClient,
+  ProposalBuilder,
+  GovernanceLayer,
+  Vote,
+  OracleUtils,
+} from '@ai-constitution-dao/sdk';
+
+// Connect to XRPL testnet
+const client = new DAOClient({
+  network: 'testnet',
+  walletSeed: 'sEdxxxxxxx',
+});
+await client.connect();
+
+// Submit a proposal using the builder
+const proposal = await client.submitProposal(
+  new ProposalBuilder()
+    .setText('Increase oracle rewards by 10%')
+    .setLayer(GovernanceLayer.L2Operational)
+    .addParameterChange('oracle_rewards', 1.1)
+    .build()
+);
+
+// Vote on a proposal
+await client.vote(proposal.proposal.id, Vote.Yes);
+
+// Check oracle network health
+const oracles = client.getAllOracles();
+const health = OracleUtils.calculateNetworkHealth(oracles);
+console.log(`Network health: ${health.healthPercent}%`);
+
+// Event subscriptions
+client.on('proposal', (p) => console.log('New proposal:', p.proposal.id));
+client.on('vote', (id, voter, vote) => console.log('Vote cast:', id, vote));
+
+await client.disconnect();
+```
+
+### SDK Features
+
+- **ProposalBuilder**: Fluent API for creating proposals
+- **ProposalTemplates**: Pre-built templates for common proposal types
+- **OracleUtils**: Analytics and monitoring utilities
+- **OracleMonitor**: Performance tracking over time
+
+## COINjecture Bridge
+
+State anchoring prepares for future bridging to COINjecture NetB mainnet:
+
+```mermaid
+flowchart TB
+    subgraph XRPL["XRPL Testnet"]
+        P[Proposals] --> MR1[Merkle Root]
+        O[Oracles] --> MR2[Merkle Root]
+        MR1 --> SR[Combined<br/>State Root]
+        MR2 --> SR
+        SR --> TX[Anchor TX<br/>with Memo]
+    end
+
+    subgraph Bridge["Bridge Preparation"]
+        TX --> EXPORT[Export State]
+        EXPORT --> JSON[Bridge JSON]
+        JSON --> PROOF[Generate<br/>Merkle Proofs]
+    end
+
+    subgraph COIN["COINjecture NetB (Future)"]
+        PROOF --> VERIFY[Verify Proofs]
+        VERIFY --> SYNC[Sync State]
+        SYNC --> FULL[Full DAO<br/>Deployment]
+    end
+
+    style XRPL fill:#1a1a2e,stroke:#e94560,color:#fff
+    style Bridge fill:#16213e,stroke:#0f3460,color:#fff
+    style COIN fill:#0f3460,stroke:#27ae60,color:#fff
+```
+
+### State Anchoring
+
+```typescript
+import { StateAnchorManager, parseBridgeState } from '@ai-constitution-dao/oracle-node';
+
+// Create anchor manager
+const anchor = new StateAnchorManager(xrplClient, 'rAnchorAddress');
+
+// Compute state roots
+const stateAnchor = await anchor.createAnchor(proposals, oracles);
+
+// Anchor to XRPL
+const txHash = await anchor.anchorToXRPL(stateAnchor);
+
+// Generate inclusion proof for a proposal
+const proof = anchor.generateProposalProof(proposal, allProposals);
+
+// Verify the proof
+const valid = anchor.verifyProof(proof);
+
+// Export for COINjecture bridge
+const bridgeData = anchor.exportForBridge(stateAnchor);
+```
+
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Types, XRPL Client, Channel A)
 - [x] **Phase 2**: Oracle Infrastructure (Commit-reveal, Registry, Proposal Manager, Jury)
 - [x] **Phase 3**: Token Economics (Staking, Slashing, Rewards, Fraud Proofs)
 - [x] **Phase 4**: Governance Flow (Voting, Routing, Orchestration)
-- [ ] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
+- [x] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
+- [ ] **Phase 6**: NAPI Bindings (Rust ↔ TypeScript native calls)
+- [ ] **Phase 7**: COINjecture Mainnet Bridge
 
 ## Specification
 
