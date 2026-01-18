@@ -336,11 +336,17 @@ ai-constitution-dao/
 │           ├── governance/      # Proposal lifecycle
 │           │   ├── proposal.ts  # Proposal manager
 │           │   └── jury.ts      # Constitutional jury
+│           ├── staking/         # Token economics
+│           │   ├── slashing.ts  # Slashing manager
+│           │   ├── fraudProof.ts # Fraud proof system
+│           │   ├── rewards.ts   # Reward distribution
+│           │   └── stakingManager.ts # Unified staking interface
 │           ├── xrpl/            # XRPL integration
 │           │   ├── client.ts    # Network client
 │           │   ├── escrow.ts    # Bond management
 │           │   └── transactions.ts
-│           └── test-oracle-flow.ts  # Integration test
+│           ├── test-oracle-flow.ts   # Phase 2 integration test
+│           └── test-staking-flow.ts  # Phase 3 integration test
 │
 ├── docs/
 │   └── spec-v5.md              # Full specification
@@ -395,11 +401,135 @@ cp .env.example .env
 | Blockchain | XRPL Testnet | Token economics, escrow, state anchoring |
 | Future | COINjecture NetB | Full DAO deployment with PoUW |
 
+## Token Economics
+
+### Staking Flow
+
+```mermaid
+flowchart TB
+    subgraph Registration["Oracle Registration"]
+        REG[Stake ORACLE_BOND<br/>100k+ XRP] --> ESCROW[Create XRPL Escrow]
+        ESCROW --> CANDIDATE[Become Candidate]
+    end
+
+    subgraph ActiveSet["Active Set Selection"]
+        CANDIDATE --> RANK[Rank by Stake]
+        RANK --> TOP101{Top 101?}
+        TOP101 -->|Yes| ACTIVE[Active Oracle]
+        TOP101 -->|No| WAIT[Wait for Epoch]
+    end
+
+    subgraph Participation["Epoch Participation"]
+        ACTIVE --> REVIEW[Review Proposals]
+        REVIEW --> COMMIT[Commit Verdicts]
+        COMMIT --> REVEAL[Reveal Verdicts]
+        REVEAL --> REWARDS[Earn Rewards]
+    end
+
+    subgraph Unstaking["Unstaking Flow"]
+        ACTIVE --> UNBOND[Initiate Unbond]
+        UNBOND --> EPOCH_WAIT[Wait 1 Epoch<br/>~2 weeks]
+        EPOCH_WAIT --> DEDUCT[Deduct Slashes]
+        DEDUCT --> RELEASE[Release Bond]
+    end
+
+    style Registration fill:#1a1a2e,stroke:#e94560,color:#fff
+    style ActiveSet fill:#16213e,stroke:#0f3460,color:#fff
+    style Participation fill:#0f3460,stroke:#27ae60,color:#fff
+    style Unstaking fill:#533483,stroke:#e94560,color:#fff
+```
+
+### Slashing Policy
+
+```mermaid
+flowchart LR
+    subgraph Violations["Slashable Offenses"]
+        V1[Non-Reveal<br/>after Commit]
+        V2[Channel A<br/>Fraud]
+        V3[Prolonged<br/>Inactivity]
+    end
+
+    subgraph Penalties["Penalties"]
+        V1 --> P1[15% Slash]
+        V2 --> P2[100% Slash<br/>+ Ejection]
+        V3 --> P3[5% Slash]
+    end
+
+    subgraph Protected["Protected Behavior"]
+        SAFE[Channel B<br/>Disagreement] --> NO_SLASH[No Penalty]
+    end
+
+    P1 --> TREASURY[DAO Treasury]
+    P2 --> TREASURY
+    P3 --> TREASURY
+
+    style Violations fill:#e74c3c,stroke:#c0392b,color:#fff
+    style Penalties fill:#d35400,stroke:#e67e22,color:#fff
+    style Protected fill:#27ae60,stroke:#2ecc71,color:#fff
+```
+
+### Fraud Proof System
+
+```mermaid
+sequenceDiagram
+    participant C as Challenger
+    participant F as FraudProofVerifier
+    participant R as Registry
+    participant S as SlashingManager
+
+    Note over C: Detects discrepancy in<br/>Channel A verdict
+
+    C->>F: Submit Fraud Proof<br/>(claimed vs actual verdict)
+
+    F->>F: Re-run Channel A<br/>deterministic verification
+
+    alt Verdict matches
+        F->>C: Proof rejected<br/>(no fraud)
+    else Verdict differs
+        F->>R: Fraud confirmed
+        R->>S: Trigger 100% slash
+        S->>S: Eject oracle permanently
+        S->>C: Challenger may receive<br/>portion of slashed bond
+    end
+```
+
+### Reward Distribution
+
+```mermaid
+flowchart TB
+    subgraph EpochEnd["End of Epoch"]
+        POOL[Epoch Reward Pool<br/>10,000 XRP] --> CALC[Calculate Rewards]
+    end
+
+    subgraph Calculation["Pro-rata Calculation"]
+        CALC --> STAKE[Stake Weight<br/>oracle_stake / total_stake]
+        STAKE --> PERF[Performance Multiplier<br/>0.5x to 1.5x]
+        PERF --> FINAL[Final Reward]
+    end
+
+    subgraph Multiplier["Performance Factors"]
+        M1[Participation Rate] --> PERF
+        M2[Missed Reveals<br/>-5% each] --> PERF
+        M3[Perfect Record<br/>+10% bonus] --> PERF
+    end
+
+    subgraph Claim["Reward Claiming"]
+        FINAL --> PENDING[Pending Rewards]
+        PENDING --> CLAIM[Claim Anytime]
+        CLAIM --> XRPL[XRPL Payment]
+    end
+
+    style EpochEnd fill:#1e3a5f,stroke:#3498db,color:#fff
+    style Calculation fill:#2c3e50,stroke:#27ae60,color:#fff
+    style Multiplier fill:#34495e,stroke:#f39c12,color:#fff
+    style Claim fill:#1a1a2e,stroke:#e94560,color:#fff
+```
+
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Types, XRPL Client, Channel A)
 - [x] **Phase 2**: Oracle Infrastructure (Commit-reveal, Registry, Proposal Manager, Jury)
-- [ ] **Phase 3**: Token Economics (Bonding, Slashing)
+- [x] **Phase 3**: Token Economics (Staking, Slashing, Rewards, Fraud Proofs)
 - [ ] **Phase 4**: Governance Flow (Voting, Friction, Routing)
 - [ ] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
 

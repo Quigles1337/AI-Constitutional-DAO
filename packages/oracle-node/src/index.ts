@@ -55,3 +55,23 @@ export {
   JurySelection,
   EligibleAccount,
 } from './governance';
+
+// Staking (Token Economics)
+export {
+  SlashingManager,
+  SlashEvent,
+  SlashType,
+  SlashConfig,
+  DEFAULT_SLASH_CONFIG,
+  FraudProofVerifier,
+  FraudProofResult,
+  FraudProofSubmission,
+  RewardDistributor,
+  OracleReward,
+  EpochRewards,
+  RewardConfig,
+  DEFAULT_REWARD_CONFIG,
+  StakingManager,
+  StakingPosition,
+  StakingResult,
+} from './staking';
