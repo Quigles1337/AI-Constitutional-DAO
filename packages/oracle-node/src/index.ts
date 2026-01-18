@@ -75,3 +75,21 @@ export {
   StakingPosition,
   StakingResult,
 } from './staking';
+
+// Voting (Governance Flow)
+export {
+  VotingSystem,
+  VoteRecord,
+  Delegation,
+  VotingPeriod,
+  VotingTally,
+  DecidabilityRouter,
+  RoutingDecision,
+  Route,
+  RouteRequirement,
+  RequirementType,
+  GovernanceOrchestrator,
+  GovernanceEvent,
+  GovernanceProposal,
+  GovernancePhase,
+} from './voting';

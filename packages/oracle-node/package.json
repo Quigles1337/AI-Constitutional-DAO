@@ -10,6 +10,7 @@
     "test": "jest",
     "test:oracle": "ts-node src/test-oracle-flow.ts",
     "test:staking": "ts-node src/test-staking-flow.ts",
+    "test:governance": "ts-node src/test-governance-flow.ts",
     "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist"
   },

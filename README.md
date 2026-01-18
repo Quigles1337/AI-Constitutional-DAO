@@ -341,12 +341,17 @@ ai-constitution-dao/
 │           │   ├── fraudProof.ts # Fraud proof system
 │           │   ├── rewards.ts   # Reward distribution
 │           │   └── stakingManager.ts # Unified staking interface
+│           ├── voting/          # Governance flow
+│           │   ├── votingSystem.ts # Token-weighted voting
+│           │   ├── router.ts    # Decidability routing
+│           │   └── orchestrator.ts # Full governance coordinator
 │           ├── xrpl/            # XRPL integration
 │           │   ├── client.ts    # Network client
 │           │   ├── escrow.ts    # Bond management
 │           │   └── transactions.ts
-│           ├── test-oracle-flow.ts   # Phase 2 integration test
-│           └── test-staking-flow.ts  # Phase 3 integration test
+│           ├── test-oracle-flow.ts     # Phase 2 integration test
+│           ├── test-staking-flow.ts    # Phase 3 integration test
+│           └── test-governance-flow.ts # Phase 4 integration test
 │
 ├── docs/
 │   └── spec-v5.md              # Full specification
@@ -525,12 +530,176 @@ flowchart TB
     style Claim fill:#1a1a2e,stroke:#e94560,color:#fff
 ```
 
+## Governance Flow
+
+### Complete Proposal Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Submitted: Submit Proposal
+
+    Submitted --> OracleReview: Auto-trigger
+
+    OracleReview --> Routing: Verdicts Received
+    OracleReview --> Rejected: Channel A FAIL
+
+    Routing --> Voting: Class I/II
+    Routing --> JuryReview: Class III
+    Routing --> PoUW: Class I (Formal)
+    Routing --> Rejected: L0 Modification
+
+    PoUW --> Voting: Verified
+
+    JuryReview --> Voting: Jury APPROVED
+    JuryReview --> Rejected: Jury REJECTED
+
+    Voting --> Timelock: Passed
+    Voting --> Rejected: Failed
+
+    Timelock --> ReadyToExecute: Expired
+
+    ReadyToExecute --> Executed: Execute
+
+    Rejected --> [*]
+    Executed --> [*]
+```
+
+### Decidability Routing Matrix
+
+```mermaid
+flowchart TB
+    subgraph Input["Oracle Verdicts"]
+        CA[Channel A<br/>PASS/FAIL]
+        CB[Channel B<br/>Alignment + Class]
+    end
+
+    CA -->|FAIL| REJ[Rejected]
+    CA -->|PASS| ROUTE{Decidability<br/>Class?}
+
+    ROUTE -->|Class I| POUW[PoUW Marketplace]
+    ROUTE -->|Class II| VOTE[Standard Voting]
+    ROUTE -->|Class III| JURY[Constitutional Jury]
+
+    subgraph ClassI["Class I: Formally Verifiable"]
+        POUW --> POUW_REQ[Requirements:<br/>• PoUW verification<br/>• Mathematical proof]
+    end
+
+    subgraph ClassII["Class II: Deterministic"]
+        VOTE --> VOTE_REQ[Requirements:<br/>• Dynamic friction<br/>• Token-weighted votes<br/>• Simple majority]
+    end
+
+    subgraph ClassIII["Class III: Human Judgment"]
+        JURY --> JURY_REQ[Requirements:<br/>• 21 jurors (VRF selected)<br/>• 2/3 supermajority<br/>• 72-hour period]
+    end
+
+    style ClassI fill:#27ae60,stroke:#2ecc71,color:#fff
+    style ClassII fill:#3498db,stroke:#2980b9,color:#fff
+    style ClassIII fill:#9b59b6,stroke:#8e44ad,color:#fff
+```
+
+### Layer-Based Requirements
+
+```mermaid
+flowchart LR
+    subgraph L0["L0: Immutable"]
+        L0_REQ[Cannot be modified<br/>Foundational axioms]
+    end
+
+    subgraph L1["L1: Constitutional"]
+        L1_REQ[67% supermajority<br/>30-day timelock<br/>Two voting rounds]
+    end
+
+    subgraph L2["L2: Operational"]
+        L2_REQ[Standard friction<br/>24h base timelock<br/>Simple majority]
+    end
+
+    subgraph L3["L3: Execution"]
+        L3_REQ[Minimal friction<br/>12h base timelock<br/>Fast iteration]
+    end
+
+    L0 -.->|Higher protects| L1
+    L1 -.->|Higher protects| L2
+    L2 -.->|Higher protects| L3
+
+    style L0 fill:#e74c3c,stroke:#c0392b,color:#fff
+    style L1 fill:#f39c12,stroke:#d68910,color:#fff
+    style L2 fill:#3498db,stroke:#2980b9,color:#fff
+    style L3 fill:#27ae60,stroke:#229954,color:#fff
+```
+
+### Voting System
+
+```mermaid
+sequenceDiagram
+    participant P as Proposer
+    participant O as Orchestrator
+    participant V as VotingSystem
+    participant T as Token Holders
+
+    P->>O: Submit Proposal
+    O->>O: Oracle Review
+    O->>O: Route to Voting
+
+    O->>V: Open Voting Period<br/>(with friction params)
+
+    loop Voting Period
+        T->>V: Cast Vote<br/>(YES/NO/ABSTAIN)
+        V->>V: Record vote + power
+        V->>V: Check delegation
+    end
+
+    Note over V: Voting period ends
+
+    V->>V: Tally votes
+    V->>V: Check quorum
+
+    alt Quorum Met + Majority YES
+        V->>O: Passed
+        O->>O: Start Timelock
+    else Quorum Not Met or Majority NO
+        V->>O: Failed
+        O->>O: Reject Proposal
+    end
+```
+
+### Event-Driven Architecture
+
+```mermaid
+flowchart TB
+    subgraph Events["Governance Events"]
+        E1[proposal:submitted]
+        E2[oracle:review_complete]
+        E3[routing:decided]
+        E4[voting:opened]
+        E5[voting:vote_cast]
+        E6[voting:closed]
+        E7[jury:verdict_reached]
+        E8[proposal:passed]
+        E9[timelock:expired]
+        E10[proposal:executed]
+    end
+
+    subgraph Listeners["External Systems"]
+        UI[Frontend UI]
+        BOT[Discord/Telegram Bot]
+        ANALYTICS[Analytics Service]
+        INDEXER[Blockchain Indexer]
+    end
+
+    Events --> UI
+    Events --> BOT
+    Events --> ANALYTICS
+    Events --> INDEXER
+
+    style Events fill:#2c3e50,stroke:#34495e,color:#fff
+```
+
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Types, XRPL Client, Channel A)
 - [x] **Phase 2**: Oracle Infrastructure (Commit-reveal, Registry, Proposal Manager, Jury)
 - [x] **Phase 3**: Token Economics (Staking, Slashing, Rewards, Fraud Proofs)
-- [ ] **Phase 4**: Governance Flow (Voting, Friction, Routing)
+- [x] **Phase 4**: Governance Flow (Voting, Routing, Orchestration)
 - [ ] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
 
 ## Specification
