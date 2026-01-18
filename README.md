@@ -592,27 +592,27 @@ stateDiagram-v2
 ```mermaid
 flowchart TB
     subgraph Input["Oracle Verdicts"]
-        CA[Channel A<br/>PASS/FAIL]
-        CB[Channel B<br/>Alignment + Class]
+        CA[Channel A: PASS/FAIL]
+        CB[Channel B: Alignment + Class]
     end
 
     CA -->|FAIL| REJ[Rejected]
-    CA -->|PASS| ROUTE{Decidability<br/>Class?}
+    CA -->|PASS| ROUTE{Decidability Class?}
 
     ROUTE -->|Class I| POUW[PoUW Marketplace]
     ROUTE -->|Class II| VOTE[Standard Voting]
     ROUTE -->|Class III| JURY[Constitutional Jury]
 
     subgraph ClassI["Class I: Formally Verifiable"]
-        POUW --> POUW_REQ[Requirements:<br/>• PoUW verification<br/>• Mathematical proof]
+        POUW --> POUW_REQ["PoUW verification + Mathematical proof"]
     end
 
     subgraph ClassII["Class II: Deterministic"]
-        VOTE --> VOTE_REQ[Requirements:<br/>• Dynamic friction<br/>• Token-weighted votes<br/>• Simple majority]
+        VOTE --> VOTE_REQ["Dynamic friction + Token-weighted + Majority"]
     end
 
     subgraph ClassIII["Class III: Human Judgment"]
-        JURY --> JURY_REQ[Requirements:<br/>• 21 jurors (VRF selected)<br/>• 2/3 supermajority<br/>• 72-hour period]
+        JURY --> JURY_REQ["21 VRF jurors + 2/3 supermajority + 72h"]
     end
 
     style ClassI fill:#27ae60,stroke:#2ecc71,color:#fff
