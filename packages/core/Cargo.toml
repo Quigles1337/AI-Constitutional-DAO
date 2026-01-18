@@ -42,7 +42,10 @@ wasm-bindgen = { workspace = true, optional = true }
 [dev-dependencies]
 criterion = { workspace = true }
 
+[build-dependencies]
+napi-build = { version = "2", optional = true }
+
 [features]
 default = []
-napi = ["dep:napi", "dep:napi-derive"]
+napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
 wasm = ["dep:wasm-bindgen"]

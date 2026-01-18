@@ -27,6 +27,15 @@ export {
 
 // Channels
 export { ChannelB, createChannelB } from './channels/channelB';
+export {
+  verifyProposalChannelA,
+  canonicalize,
+  computeComplexity,
+  detectParadox,
+  detectCycles,
+  isNativeAvailable,
+  CanonicalPayload,
+} from './channels/channelA';
 
 // Network (Oracle Infrastructure)
 export {

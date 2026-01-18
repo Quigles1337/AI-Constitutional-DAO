@@ -1,0 +1,56 @@
+{
+  "name": "@ai-constitution-dao/core",
+  "version": "0.1.0",
+  "description": "Native Channel A verification for AI Constitution DAO",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
+  "napi": {
+    "name": "constitution-dao-core",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-unknown-linux-musl",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-musl"
+      ]
+    }
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release --features napi",
+    "build:debug": "napi build --platform --features napi",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "cargo test --features napi",
+    "universal": "napi universal",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "keywords": [
+    "xrpl",
+    "dao",
+    "governance",
+    "ai",
+    "constitution",
+    "verification",
+    "napi",
+    "native"
+  ],
+  "author": "AI Constitution DAO",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Quigles1337/AI-Constitutional-DAO.git",
+    "directory": "packages/core"
+  }
+}

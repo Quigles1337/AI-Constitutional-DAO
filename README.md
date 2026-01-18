@@ -318,17 +318,23 @@ stateDiagram-v2
 ai-constitution-dao/
 ├── packages/
 │   ├── core/                    # Rust - Channel A verification
-│   │   └── src/
-│   │       ├── channel_a/       # Verification pipeline
-│   │       │   ├── canonicalize.rs
-│   │       │   ├── complexity.rs
-│   │       │   ├── paradox.rs
-│   │       │   └── cycles.rs
-│   │       └── types/           # Core types
+│   │   ├── src/
+│   │   │   ├── channel_a/       # Verification pipeline
+│   │   │   │   ├── canonicalize.rs
+│   │   │   │   ├── complexity.rs
+│   │   │   │   ├── paradox.rs
+│   │   │   │   └── cycles.rs
+│   │   │   ├── types/           # Core types
+│   │   │   ├── napi.rs          # NAPI bindings for Node.js
+│   │   │   └── lib.rs           # Library entry point
+│   │   ├── index.js             # Native module loader
+│   │   ├── index.d.ts           # TypeScript definitions
+│   │   └── package.json         # npm package config
 │   │
 │   ├── oracle-node/             # TypeScript - Oracle service
 │   │   └── src/
-│   │       ├── channels/        # Channel B implementation
+│   │       ├── channels/        # Dual-channel oracle system
+│   │       │   ├── channelA.ts  # Deterministic verification (uses NAPI)
 │   │       │   └── channelB.ts  # Claude API integration
 │   │       ├── network/         # Oracle infrastructure
 │   │       │   ├── consensus.ts # Commit-reveal protocol
@@ -913,6 +919,97 @@ const valid = anchor.verifyProof(proof);
 const bridgeData = anchor.exportForBridge(stateAnchor);
 ```
 
+## Native NAPI Bindings
+
+Phase 6 adds native Rust bindings via NAPI for high-performance Channel A verification:
+
+```mermaid
+flowchart LR
+    subgraph TypeScript["TypeScript (oracle-node)"]
+        TS[channelA.ts] --> CHECK{Native<br/>Available?}
+    end
+
+    CHECK -->|Yes| NAPI[NAPI Bindings]
+    CHECK -->|No| FALLBACK[TS Fallback]
+
+    subgraph Rust["Rust (core)"]
+        NAPI --> RUST[napi.rs]
+        RUST --> CANON[canonicalize]
+        RUST --> COMPLEX[complexity]
+        RUST --> PARADOX[paradox]
+        RUST --> CYCLES[cycles]
+    end
+
+    FALLBACK --> TS_IMPL[TypeScript<br/>Implementation]
+
+    style TypeScript fill:#3178c6,stroke:#235a97,color:#fff
+    style Rust fill:#dea584,stroke:#b7410e,color:#000
+```
+
+### Building Native Module
+
+```bash
+# Install napi-rs CLI
+cd packages/core
+npm install
+
+# Build for current platform
+npm run build
+
+# Build debug version
+npm run build:debug
+```
+
+### Usage
+
+```typescript
+import {
+  verifyProposalChannelA,
+  canonicalize,
+  isNativeAvailable
+} from '@ai-constitution-dao/oracle-node';
+
+// Check if native bindings are loaded
+if (isNativeAvailable()) {
+  console.log('Using native Rust implementation');
+} else {
+  console.log('Using TypeScript fallback');
+}
+
+// Verify a proposal (automatically uses native if available)
+const verdict = verifyProposalChannelA({
+  proposer: 'rProposerAddress',
+  logic_ast: '{"action": "transfer", "amount": 100}',
+  text: 'Transfer tokens to treasury',
+  layer: GovernanceLayer.L2Operational,
+});
+
+if (verdict.pass) {
+  console.log('Proposal passed Channel A');
+} else {
+  console.log('Failed:', {
+    paradox: verdict.paradox_found,
+    cycle: verdict.cycle_found,
+    complexity: verdict.complexity_score
+  });
+}
+```
+
+### Native Functions
+
+| Function | Description |
+|----------|-------------|
+| `verifyProposal` | Full Channel A verification pipeline |
+| `canonicalizeProposal` | Deterministic proposal representation |
+| `computeComplexityScore` | Zlib compression-based complexity |
+| `detectParadoxInText` | Regex-based paradox detection |
+| `detectCyclesInAst` | Tarjan's SCC cycle detection |
+| `calculateFriction` | Friction params from alignment score |
+| `getMaxComplexity` | MAX_COMPLEXITY constant (10,000) |
+| `getOracleBond` | ORACLE_BOND constant |
+| `getActiveOracleSetSize` | Active set size (101) |
+| `getJurySize` | Jury size (21) |
+
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Types, XRPL Client, Channel A)
@@ -920,7 +1017,7 @@ const bridgeData = anchor.exportForBridge(stateAnchor);
 - [x] **Phase 3**: Token Economics (Staking, Slashing, Rewards, Fraud Proofs)
 - [x] **Phase 4**: Governance Flow (Voting, Routing, Orchestration)
 - [x] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
-- [ ] **Phase 6**: NAPI Bindings (Rust ↔ TypeScript native calls)
+- [x] **Phase 6**: NAPI Bindings (Rust ↔ TypeScript native calls)
 - [ ] **Phase 7**: COINjecture Mainnet Bridge
 
 ## Specification
