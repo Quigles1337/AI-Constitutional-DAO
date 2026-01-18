@@ -4,7 +4,7 @@
   "private": true,
   "description": "AI Constitution DAO - Governance framework on XRPL with dual-channel oracle system",
   "author": "Alexander David Zalewski",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",

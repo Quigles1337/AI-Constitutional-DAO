@@ -1026,8 +1026,13 @@ See [docs/spec-v5.md](docs/spec-v5.md) for the complete v5.0 specification.
 
 ## License
 
-MIT
+**PROPRIETARY** - All Rights Reserved
+
+Copyright (c) 2024-2026 Alexander David Zalewski. This software is proprietary and confidential. No license is granted for use, copying, modification, or distribution without explicit written consent from the owner.
+
+See [LICENSE](LICENSE) for full terms.
 
 ## Author
 
 Alexander David Zalewski
+Contact: adz@alphx.io
