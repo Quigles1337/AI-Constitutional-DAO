@@ -188,6 +188,130 @@ sequenceDiagram
     end
 ```
 
+## Commit-Reveal Protocol
+
+The oracle consensus mechanism uses a two-phase commit-reveal protocol to prevent front-running and ensure honest voting:
+
+```mermaid
+flowchart TB
+    subgraph Phase1["Phase 1: Commit"]
+        P1[Proposal Submitted] --> O1[Oracle 1]
+        P1 --> O2[Oracle 2]
+        P1 --> O3[Oracle 3]
+
+        O1 --> V1[Channel A + B<br/>Verdict]
+        O2 --> V2[Channel A + B<br/>Verdict]
+        O3 --> V3[Channel A + B<br/>Verdict]
+
+        V1 --> N1[Generate Nonce]
+        V2 --> N2[Generate Nonce]
+        V3 --> N3[Generate Nonce]
+
+        N1 --> H1["hash(verdict + nonce)"]
+        N2 --> H2["hash(verdict + nonce)"]
+        N3 --> H3["hash(verdict + nonce)"]
+
+        H1 --> XRPL1[Submit to XRPL<br/>as Memo]
+        H2 --> XRPL1
+        H3 --> XRPL1
+    end
+
+    XRPL1 --> WAIT[Wait for<br/>ORACLE_WINDOW]
+
+    subgraph Phase2["Phase 2: Reveal"]
+        WAIT --> R1[Oracle 1 Reveals<br/>verdict + nonce]
+        WAIT --> R2[Oracle 2 Reveals<br/>verdict + nonce]
+        WAIT --> R3[Oracle 3 Reveals<br/>verdict + nonce]
+
+        R1 --> VERIFY[Verify:<br/>hash matches commitment]
+        R2 --> VERIFY
+        R3 --> VERIFY
+    end
+
+    subgraph Phase3["Phase 3: Tally"]
+        VERIFY --> AGG[Aggregate Verdicts]
+        AGG --> CA_CONS[Channel A Consensus<br/>Majority PASS/FAIL]
+        AGG --> CB_CONS[Channel B Consensus<br/>Avg Alignment, Majority Class]
+
+        CA_CONS --> QUORUM{Quorum<br/>Reached?}
+        CB_CONS --> QUORUM
+
+        QUORUM -->|Yes| ROUTE[Route Proposal]
+        QUORUM -->|No| EXTEND[Extend Window]
+    end
+
+    style Phase1 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style Phase2 fill:#16213e,stroke:#0f3460,color:#fff
+    style Phase3 fill:#0f3460,stroke:#533483,color:#fff
+```
+
+## Constitutional Jury System
+
+For Class III proposals requiring human judgment, a jury is randomly selected:
+
+```mermaid
+flowchart TB
+    subgraph Selection["Jury Selection (VRF-based)"]
+        PROP[Class III Proposal] --> SEED[Get VRF Seed<br/>from submission block]
+        SEED --> ELIGIBLE[Filter Eligible Accounts<br/>Active in last 3 months]
+        ELIGIBLE --> WEIGHT["Weight by sqrt(stake)<br/>Balances influence"]
+        WEIGHT --> SELECT[Weighted Random Selection<br/>21 members]
+    end
+
+    subgraph Voting["Jury Voting (72 hours)"]
+        SELECT --> J1[Juror 1]
+        SELECT --> J2[Juror 2]
+        SELECT --> JN[Juror N...]
+        SELECT --> J21[Juror 21]
+
+        J1 --> VOTE[Cast Vote<br/>YES / NO / ABSTAIN]
+        J2 --> VOTE
+        JN --> VOTE
+        J21 --> VOTE
+    end
+
+    subgraph Resolution["Verdict Resolution"]
+        VOTE --> COUNT[Count Votes]
+        COUNT --> SUPER{"2/3 Supermajority?<br/>(of voting members)"}
+
+        SUPER -->|"YES ≥ 2/3"| APPROVED[APPROVED]
+        SUPER -->|"NO ≥ 2/3"| REJECTED[REJECTED]
+        SUPER -->|Neither| NO_VERDICT[NO VERDICT<br/>Status Quo]
+    end
+
+    style Selection fill:#1e3a5f,stroke:#3498db,color:#fff
+    style Voting fill:#2c3e50,stroke:#27ae60,color:#fff
+    style Resolution fill:#34495e,stroke:#e74c3c,color:#fff
+```
+
+## Proposal Lifecycle
+
+Complete flow from submission to execution:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Submit Proposal
+
+    Pending --> ChannelAReview: Oracle Window Opens
+
+    ChannelAReview --> Rejected: Channel A FAIL
+    ChannelAReview --> ChannelBReview: Channel A PASS
+
+    ChannelBReview --> Voting: Class I or II
+    ChannelBReview --> RequiresHumanReview: Class III
+
+    RequiresHumanReview --> Voting: Jury APPROVED
+    RequiresHumanReview --> Rejected: Jury REJECTED
+
+    Voting --> Passed: Quorum Met + Majority YES
+    Voting --> Rejected: Quorum Not Met or Majority NO
+
+    Passed --> Executed: Timelock Expires
+
+    Rejected --> [*]
+    Executed --> [*]
+```
+
 ## Project Structure
 
 ```
@@ -204,12 +328,19 @@ ai-constitution-dao/
 │   │
 │   └── oracle-node/             # TypeScript - Oracle service
 │       └── src/
-│           ├── channels/        # Channel A/B implementations
+│           ├── channels/        # Channel B implementation
 │           │   └── channelB.ts  # Claude API integration
-│           └── xrpl/            # XRPL integration
-│               ├── client.ts    # Network client
-│               ├── escrow.ts    # Bond management
-│               └── transactions.ts
+│           ├── network/         # Oracle infrastructure
+│           │   ├── consensus.ts # Commit-reveal protocol
+│           │   └── registry.ts  # Oracle set management
+│           ├── governance/      # Proposal lifecycle
+│           │   ├── proposal.ts  # Proposal manager
+│           │   └── jury.ts      # Constitutional jury
+│           ├── xrpl/            # XRPL integration
+│           │   ├── client.ts    # Network client
+│           │   ├── escrow.ts    # Bond management
+│           │   └── transactions.ts
+│           └── test-oracle-flow.ts  # Integration test
 │
 ├── docs/
 │   └── spec-v5.md              # Full specification
@@ -267,9 +398,9 @@ cp .env.example .env
 ## Roadmap
 
 - [x] **Phase 1**: Foundation (Types, XRPL Client, Channel A)
-- [ ] **Phase 2**: Oracle Infrastructure (Commit-reveal, P2P)
+- [x] **Phase 2**: Oracle Infrastructure (Commit-reveal, Registry, Proposal Manager, Jury)
 - [ ] **Phase 3**: Token Economics (Bonding, Slashing)
-- [ ] **Phase 4**: Governance Flow (Proposals, Voting, Jury)
+- [ ] **Phase 4**: Governance Flow (Voting, Friction, Routing)
 - [ ] **Phase 5**: Integration (CLI, SDK, COINjecture Bridge)
 
 ## Specification

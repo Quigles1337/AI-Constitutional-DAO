@@ -2,7 +2,7 @@
  * AI Constitution DAO - Oracle Node
  *
  * Main entry point for the oracle node package.
- * Provides XRPL integration and Channel A/B oracle functionality.
+ * Provides XRPL integration, oracle consensus, and governance management.
  */
 
 // Types
@@ -28,45 +28,30 @@ export {
 // Channels
 export { ChannelB, createChannelB } from './channels/channelB';
 
-/**
- * Quick start example
- *
- * @example
- * ```typescript
- * import {
- *   createClient,
- *   EscrowManager,
- *   ChannelB,
- *   Proposal,
- *   GovernanceLayer,
- * } from '@ai-constitution-dao/oracle-node';
- *
- * async function main() {
- *   // Connect to XRPL Testnet
- *   const client = await createClient('testnet');
- *
- *   // Create and fund a wallet
- *   const wallet = client.createWallet();
- *   await client.fundWallet(wallet);
- *
- *   console.log('Wallet address:', wallet.address);
- *   console.log('Balance:', await client.getBalance());
- *
- *   // Create Channel B oracle
- *   const channelB = new ChannelB();
- *
- *   // Analyze a proposal
- *   const verdict = await channelB.analyze({
- *     logic_ast: '{"action": "transfer", "amount": 100}',
- *     text: 'Transfer 100 tokens to the community fund',
- *     layer: GovernanceLayer.L2Operational,
- *   });
- *
- *   console.log('Channel B Verdict:', verdict);
- *
- *   await client.disconnect();
- * }
- *
- * main().catch(console.error);
- * ```
- */
+// Network (Oracle Infrastructure)
+export {
+  CommitRevealProtocol,
+  OracleVerdict,
+  Commitment,
+  Reveal,
+  AggregatedVerdict,
+  ProtocolPhase,
+  ProposalProtocolState,
+  OracleRegistry,
+  OracleStatus,
+  OracleInfo,
+  OracleMetrics,
+  EpochInfo,
+} from './network';
+
+// Governance
+export {
+  ProposalManager,
+  ProposalState,
+  VotingResults,
+  JuryVerdict,
+  ConstitutionalJury,
+  JuryMember,
+  JurySelection,
+  EligibleAccount,
+} from './governance';
