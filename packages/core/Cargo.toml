@@ -1,0 +1,48 @@
+[package]
+name = "constitution-dao-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core verification logic for AI Constitution DAO - Channel A deterministic verification"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Cryptography
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+# Compression (for complexity scoring)
+flate2 = { workspace = true }
+
+# Regex (for paradox detection)
+regex = { workspace = true }
+lazy_static = { workspace = true }
+
+# Graph algorithms (for cycle detection)
+petgraph = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# NAPI bindings for Node.js
+napi = { workspace = true, optional = true }
+napi-derive = { workspace = true, optional = true }
+
+# WASM bindings
+wasm-bindgen = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[features]
+default = []
+napi = ["dep:napi", "dep:napi-derive"]
+wasm = ["dep:wasm-bindgen"]

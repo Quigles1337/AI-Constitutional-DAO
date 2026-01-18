@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "packages/core"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Alexander David Zalewski"]
+license = "MIT"
+repository = "https://github.com/adz/ai-constitution-dao"
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Cryptography
+sha2 = "0.10"
+hex = "0.4"
+
+# Compression (for complexity scoring)
+flate2 = "1.0"
+
+# Regex (for paradox detection)
+regex = "1.10"
+lazy_static = "1.4"
+
+# Graph algorithms (for cycle detection)
+petgraph = "0.6"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# WASM/NAPI bindings
+wasm-bindgen = "0.2"
+napi = { version = "2", features = ["napi4"] }
+napi-derive = "2"
+
+# Testing
+criterion = "0.5"
