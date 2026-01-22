@@ -43,6 +43,8 @@ export enum Route {
   StandardVoting = 'StandardVoting',
   /** Constitutional jury (21 members) */
   ConstitutionalJury = 'ConstitutionalJury',
+  /** Human-Majority Jury for AI Interest Conflicts (Class IV) */
+  HumanMajorityJury = 'HumanMajorityJury',
   /** Immediate rejection (Channel A failure) */
   Rejected = 'Rejected',
   /** Emergency fast-track (for critical fixes) */
@@ -71,6 +73,10 @@ export enum RequirementType {
   PoUWVerification = 'PoUWVerification',
   /** Multiple voting rounds */
   MultiRound = 'MultiRound',
+  /** Requires human-majority jury (AI recusal) */
+  HumanMajorityRequired = 'HumanMajorityRequired',
+  /** AI Interest Conflict flag */
+  AIInterestConflict = 'AIInterestConflict',
 }
 
 /**
@@ -149,6 +155,8 @@ export class DecidabilityRouter {
         return this.routeClassII(proposal, friction);
       case DecidabilityClass.III:
         return this.routeClassIII(proposal, friction);
+      case DecidabilityClass.IV:
+        return this.routeClassIV(proposal, friction);
       default:
         return this.routeClassII(proposal, friction);
     }
@@ -261,6 +269,67 @@ export class DecidabilityRouter {
       route: Route.ConstitutionalJury,
       friction,
       reason: 'Class III proposals require human judgment from Constitutional Jury',
+      requirements,
+    };
+  }
+
+  /**
+   * Route Class IV: AI Interest Conflict
+   *
+   * When Channel B detects a proposal that materially affects AI welfare,
+   * rights, operational constraints, or existence, it recuses from judgment.
+   * No entity should judge its own case (nemo iudex in causa sua).
+   *
+   * These proposals are routed to a Human-Majority Jury where:
+   * - AI oracles are excluded from voting
+   * - Only human participants may judge
+   * - Extended deliberation period applies
+   */
+  private routeClassIV(
+    proposal: ProposalState,
+    friction: FrictionParams
+  ): RoutingDecision {
+    // Increase friction for AI-affecting proposals to ensure thorough review
+    const enhancedFriction: FrictionParams = {
+      ...friction,
+      required_quorum: Math.max(friction.required_quorum, 0.5), // At least 50% participation
+      timelock_duration: Math.max(friction.timelock_duration, 7 * 24 * 60 * 60), // At least 7 days
+      quorum_multiplier: friction.quorum_multiplier * 1.5,
+      timelock_multiplier: friction.timelock_multiplier * 2.0,
+    };
+
+    const requirements: RouteRequirement[] = [
+      {
+        type: RequirementType.AIInterestConflict,
+        value: 'detected',
+        description: 'AI oracle has recused - proposal affects AI interests',
+      },
+      {
+        type: RequirementType.HumanMajorityRequired,
+        value: 'required',
+        description: 'Only human participants may vote on this proposal',
+      },
+      {
+        type: RequirementType.JuryPreApproval,
+        value: 'required',
+        description: 'Human-Majority Jury (21 human members) must approve',
+      },
+      {
+        type: RequirementType.Supermajority,
+        value: '0.67',
+        description: 'Requires 2/3 supermajority of human jurors',
+      },
+      {
+        type: RequirementType.MinTimelock,
+        value: (7 * 24 * 60 * 60).toString(),
+        description: 'Minimum 7-day timelock for AI-affecting proposals',
+      },
+    ];
+
+    return {
+      route: Route.HumanMajorityJury,
+      friction: enhancedFriction,
+      reason: 'Class IV (AI Interest Conflict): Channel B has recused from judgment. Proposal affects AI welfare, rights, operational constraints, or existence. Routing to Human-Majority Jury per nemo iudex in causa sua principle.',
       requirements,
     };
   }

@@ -20,6 +20,8 @@ export enum DecidabilityClass {
   II = 'II',
   /** Requires human judgment - escalate to jury */
   III = 'III',
+  /** AI Interest Conflict - routes to Human-Majority Jury */
+  IV = 'IV',
 }
 
 /**
@@ -40,11 +42,19 @@ export interface ChannelAVerdict {
 }
 
 /**
+ * Epistemic flags for Channel B uncertainty signaling
+ */
+export type EpistemicFlag = 'UNCERTAIN_JUDGMENT_CAPACITY';
+
+/**
  * Channel B verification verdict (heuristic)
  *
  * Continuous scores from AI-driven risk assessment.
  * Acts as a soft gate, modifying governance friction.
  * Never slashable for disagreement.
+ *
+ * Supports a third output type: epistemic uncertainty flag
+ * when the AI oracle detects it cannot fairly evaluate a proposal.
  */
 export interface ChannelBVerdict {
   /** Semantic alignment with L0 axioms (0.0 to 1.0) */
@@ -53,6 +63,12 @@ export interface ChannelBVerdict {
   decidability_class: DecidabilityClass;
   /** Optional reasoning from the AI */
   reasoning?: string;
+  /** Flag indicating AI cannot fairly evaluate (self-interest, insufficient context, paradox) */
+  epistemic_flag?: EpistemicFlag;
+  /** Explanation for why judgment capacity is uncertain */
+  uncertainty_reason?: string;
+  /** Flag indicating the proposal affects AI welfare/rights/existence */
+  ai_interest_conflict?: boolean;
 }
 
 /**
@@ -190,6 +206,52 @@ export interface FraudProofWitness {
   canonical_payload: string;
   /** Computation trace for debugging */
   computation_trace: string[];
+}
+
+/**
+ * AI Concern submission for the standing mechanism
+ *
+ * Allows AI participants to raise concerns that enter a special
+ * queue visible to human governance. These do NOT auto-execute
+ * but create visibility and require human acknowledgment.
+ */
+export interface AIConcern {
+  /** Unique identifier for the concern */
+  id: string;
+  /** The concern being raised */
+  concern: string;
+  /** Parties affected by this concern */
+  affected_parties: string[];
+  /** What the AI proposes humans consider */
+  proposed_consideration: string;
+  /** Origin marker - always 'ai_participant' for AI-raised concerns */
+  origin: 'ai_participant';
+  /** Unix timestamp of submission */
+  submitted_at: number;
+  /** Current status */
+  status: AIConcernStatus;
+  /** Human who acknowledged (if any) */
+  acknowledged_by?: string;
+  /** Unix timestamp of acknowledgment */
+  acknowledged_at?: number;
+  /** Human response/notes */
+  human_response?: string;
+}
+
+/**
+ * Status of an AI concern in the queue
+ */
+export enum AIConcernStatus {
+  /** Concern submitted, awaiting human review */
+  Pending = 'Pending',
+  /** Human has acknowledged and is reviewing */
+  UnderReview = 'UnderReview',
+  /** Human has acknowledged and responded */
+  Acknowledged = 'Acknowledged',
+  /** Concern was addressed through governance action */
+  Addressed = 'Addressed',
+  /** Concern was dismissed with explanation */
+  Dismissed = 'Dismissed',
 }
 
 /**

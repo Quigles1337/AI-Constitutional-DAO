@@ -24,5 +24,5 @@ export {
   CanonicalPayload,
 } from './channelA';
 
-// Channel B: Heuristic analysis
-export { ChannelB, createChannelB } from './channelB';
+// Channel B: Heuristic analysis with recusal mechanism
+export { ChannelB, createChannelB, detectsAIInterestConflict } from './channelB';

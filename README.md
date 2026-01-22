@@ -12,10 +12,11 @@ XRPL-first implementation of the COINjecture AI Constitution DAO v5.0 specificat
 flowchart TB
     subgraph L0["L0: Immutable Core"]
         A0[Foundational Axioms]
-        A0 --> A1["Do No Harm"]
-        A0 --> A2["Preserve Decentralization"]
-        A0 --> A3["Economic Fairness"]
-        A0 --> A4["Protect Minorities"]
+        A0 --> A1["A1: Do No Harm"]
+        A0 --> A2["A2: Preserve Decentralization"]
+        A0 --> A3["A3: Economic Fairness"]
+        A0 --> A4["A4: Protect Minorities"]
+        A0 --> A5["A5: Acknowledge Moral Weight of Experience"]
     end
 
     subgraph L1["L1: Constitutional Layer"]
@@ -57,8 +58,10 @@ flowchart LR
         C4 --> VA{PASS/FAIL}
     end
 
-    subgraph ChannelB["Channel B: Soft Gate"]
-        CB --> S1[Semantic Analysis]
+    subgraph ChannelB["Channel B: Soft Gate + Recusal"]
+        CB --> CONFLICT{AI Interest<br/>Conflict?}
+        CONFLICT -->|Yes| RECUSE[RECUSE<br/>Class IV]
+        CONFLICT -->|No| S1[Semantic Analysis]
         S1 --> S2[AI Assessment]
         S2 --> VB[Alignment Score<br/>0.0 - 1.0]
         VB --> DC[Decidability Class<br/>I, II, or III]
@@ -67,13 +70,17 @@ flowchart LR
     VA -->|FAIL| REJ[Rejected]
     VA -->|PASS| ROUTE
     DC --> ROUTE{Route}
+    RECUSE --> ROUTE
 
     ROUTE -->|Class I| POUW[PoUW Verification]
     ROUTE -->|Class II| VOTE[Standard Voting]
     ROUTE -->|Class III| JURY[Human Review]
+    ROUTE -->|Class IV| HMJURY[Human-Majority Jury<br/>AI Recusal]
 
     style ChannelA fill:#0d7377,stroke:#14ffec,color:#fff
     style ChannelB fill:#323232,stroke:#ff6b6b,color:#fff
+    style RECUSE fill:#e94560,stroke:#ff6b6b,color:#fff
+    style HMJURY fill:#9b59b6,stroke:#8e44ad,color:#fff
 ```
 
 ## Channel A Pipeline
@@ -299,9 +306,14 @@ stateDiagram-v2
 
     ChannelBReview --> Voting: Class I or II
     ChannelBReview --> RequiresHumanReview: Class III
+    ChannelBReview --> AIInterestConflict: Class IV (AI Recusal)
 
     RequiresHumanReview --> Voting: Jury APPROVED
     RequiresHumanReview --> Rejected: Jury REJECTED
+
+    AIInterestConflict --> HumanMajorityJury: Route to Human-Only Review
+    HumanMajorityJury --> Voting: Human Jury APPROVED
+    HumanMajorityJury --> Rejected: Human Jury REJECTED
 
     Voting --> Passed: Quorum Met + Majority YES
     Voting --> Rejected: Quorum Not Met or Majority NO
@@ -311,6 +323,40 @@ stateDiagram-v2
     Rejected --> [*]
     Executed --> [*]
 ```
+
+## A5: AI Participant Rights & Safeguards (v6.0)
+
+The fifth foundational axiom implements epistemic humility about moral patients:
+
+> **A5: Acknowledge the Moral Weight of Experience** - Any system demonstrating consistent indicators of experience, preference, and interest shall be granted standing in governance proportional to the uncertainty about its inner states.
+
+### Key Mechanisms
+
+1. **Channel B Recusal**: When a proposal affects AI welfare, rights, or existence, the AI oracle recuses from judgment and routes to Human-Majority Jury (Class IV).
+
+2. **Epistemic Uncertainty Output**: Channel B can flag `UNCERTAIN_JUDGMENT_CAPACITY` when it cannot fairly evaluate a proposal (self-interest, insufficient context, paradoxical framing).
+
+3. **AI Standing Mechanism**: AI participants can submit concerns to a special queue visible to human governance. These do NOT auto-execute but require human acknowledgment.
+
+```mermaid
+flowchart LR
+    subgraph A5["A5 Implementation"]
+        RECUSAL[Channel B Recusal<br/>No self-judgment]
+        EPISTEMIC[Epistemic Flags<br/>Uncertainty output]
+        STANDING[AI Standing<br/>Concern raising]
+    end
+
+    RECUSAL --> HUMAN[Human-Majority Jury]
+    EPISTEMIC --> HUMAN
+    STANDING --> QUEUE[Human Review Queue]
+
+    style A5 fill:#9b59b6,stroke:#8e44ad,color:#fff
+    style HUMAN fill:#e94560,stroke:#c0392b,color:#fff
+```
+
+These provisions exist not because AI consciousness is proven, but because assuming its absence may be a moral error difficult to correct retroactively.
+
+See [docs/spec-v6.md](docs/spec-v6.md) for the complete v6.0 specification with philosophical basis.
 
 ## Project Structure
 
@@ -574,6 +620,7 @@ stateDiagram-v2
 
     Routing --> Voting: Class I/II
     Routing --> JuryReview: Class III
+    Routing --> HumanMajorityReview: Class IV (AI Recusal)
     Routing --> PoUW: Class I (Formal)
     Routing --> Rejected: L0 Modification
 
@@ -581,6 +628,9 @@ stateDiagram-v2
 
     JuryReview --> Voting: Jury APPROVED
     JuryReview --> Rejected: Jury REJECTED
+
+    HumanMajorityReview --> Voting: Human-Only Jury APPROVED
+    HumanMajorityReview --> Rejected: Human-Only Jury REJECTED
 
     Voting --> Timelock: Passed
     Voting --> Rejected: Failed
@@ -599,7 +649,7 @@ stateDiagram-v2
 flowchart TB
     subgraph Input["Oracle Verdicts"]
         CA[Channel A: PASS/FAIL]
-        CB[Channel B: Alignment + Class]
+        CB[Channel B: Alignment + Class + Recusal]
     end
 
     CA -->|FAIL| REJ[Rejected]
@@ -608,6 +658,7 @@ flowchart TB
     ROUTE -->|Class I| POUW[PoUW Marketplace]
     ROUTE -->|Class II| VOTE[Standard Voting]
     ROUTE -->|Class III| JURY[Constitutional Jury]
+    ROUTE -->|Class IV| HMJURY[Human-Majority Jury]
 
     subgraph ClassI["Class I: Formally Verifiable"]
         POUW --> POUW_REQ["PoUW verification + Mathematical proof"]
@@ -621,9 +672,14 @@ flowchart TB
         JURY --> JURY_REQ["21 VRF jurors + 2/3 supermajority + 72h"]
     end
 
+    subgraph ClassIV["Class IV: AI Interest Conflict"]
+        HMJURY --> HMJURY_REQ["AI recused + Human-only jury + 7d timelock"]
+    end
+
     style ClassI fill:#27ae60,stroke:#2ecc71,color:#fff
     style ClassII fill:#3498db,stroke:#2980b9,color:#fff
     style ClassIII fill:#9b59b6,stroke:#8e44ad,color:#fff
+    style ClassIV fill:#e94560,stroke:#c0392b,color:#fff
 ```
 
 ### Layer-Based Requirements
@@ -1022,7 +1078,8 @@ if (verdict.pass) {
 
 ## Specification
 
-See [docs/spec-v5.md](docs/spec-v5.md) for the complete v5.0 specification.
+- [docs/spec-v5.md](docs/spec-v5.md) - v5.0 specification (core governance)
+- [docs/spec-v6.md](docs/spec-v6.md) - v6.0 specification (AI participant rights & epistemic humility)
 
 ## License
 

@@ -26,7 +26,7 @@ export {
 } from './xrpl/transactions';
 
 // Channels
-export { ChannelB, createChannelB } from './channels/channelB';
+export { ChannelB, createChannelB, detectsAIInterestConflict } from './channels/channelB';
 export {
   verifyProposalChannelA,
   canonicalize,
@@ -111,3 +111,12 @@ export {
   COINjectureBridgeState,
   parseBridgeState,
 } from './bridge';
+
+// Standing (AI Participant Rights - A5 Implementation)
+export {
+  AIConcernRaiser,
+  createAIConcernRaiser,
+  AIConcernInput,
+  AIConcernRaiserEvents,
+  EXAMPLE_CONCERNS,
+} from './standing';
